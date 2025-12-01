@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://adpay-rho.vercel.app/';
 
 // Global variables
 let currentAd = null;
@@ -413,4 +413,5 @@ function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/';
+
 }
