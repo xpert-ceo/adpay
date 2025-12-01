@@ -1,0 +1,184 @@
+/* Dashboard Styles */
+.dashboard {
+    padding-top: 80px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.welcome-section {
+    background: linear-gradient(135deg, var(--black), var(--dark-gray));
+    color: var(--white);
+    padding: 2rem 0;
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.stat-card {
+    background: var(--dark-gray);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--gray);
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: var(--primary-gold);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.stat-card .amount {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--white);
+}
+
+.watch-ads-section,
+.earnings-section,
+.referrals-section,
+.withdrawal-section {
+    padding: 3rem 0;
+    border-bottom: 1px solid var(--gray);
+}
+
+.ad-container {
+    background: var(--dark-gray);
+    padding: 2rem;
+    border-radius: 10px;
+    border: 1px solid var(--gray);
+    text-align: center;
+}
+
+.ad-placeholder {
+    width: 100%;
+    height: 300px;
+    background: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+    border: 2px dashed var(--primary-gold);
+}
+
+.transactions table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--dark-gray);
+}
+
+.transactions th,
+.transactions td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--gray);
+}
+
+.transactions th {
+    color: var(--primary-gold);
+}
+
+.referral-code {
+    background: var(--dark-gray);
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.referral-stats {
+    margin-top: 2rem;
+}
+
+.withdrawal-form,
+.withdrawal-request {
+    background: var(--dark-gray);
+    padding: 2rem;
+    border-radius: 10px;
+    margin-top: 1.5rem;
+}
+
+.withdrawal-form form,
+.withdrawal-request form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 400px;
+}
+
+/* Ad Timer Styles */
+.timer-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-gold);
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--gray);
+    border-radius: 5px;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-gold);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.status-completed {
+    background: #10B981;
+    color: white;
+}
+
+.status-pending {
+    background: #F59E0B;
+    color: white;
+}
+
+.status-failed {
+    background: #EF4444;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .transactions {
+        overflow-x: auto;
+    }
+
+    .referral-code {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ad-placeholder {
+        height: 200px;
+    }
+}

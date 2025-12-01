@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdPay - Earn Money Watching Ads</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>AdPay</h2>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#pricing">Pricing</a>
+                <button class="btn-login" onclick="openModal('loginModal')">Login</button>
+                <button class="btn-register" onclick="openModal('registerModal')">Register</button>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="#home" onclick="toggleMobileMenu()">Home</a>
+            <a href="#how-it-works" onclick="toggleMobileMenu()">How It Works</a>
+            <a href="#pricing" onclick="toggleMobileMenu()">Pricing</a>
+            <button class="btn-login" onclick="openModal('loginModal'); toggleMobileMenu();">Login</button>
+            <button class="btn-register" onclick="openModal('registerModal'); toggleMobileMenu();">Register</button>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <h1>Earn Money While You Watch Ads</h1>
+                <p>Join thousands of users earning real money by watching ads. Simple, transparent, and rewarding.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="openModal('registerModal')">Start Earning Now</button>
+                    <button class="btn-secondary" onclick="document.querySelector('#how-it-works').scrollIntoView({behavior: 'smooth'})">Learn More</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section id="how-it-works" class="how-it-works">
+            <h2>How AdPay Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Register & Choose Plan</h3>
+                    <p>Select between Basic (₦3,000) or Premium (₦5,000) plan to start earning</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Watch Ads</h3>
+                    <p>Watch engaging ads and earn ₦15 (Basic) or ₦20 (Premium) per view</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Earn & Withdraw</h3>
+                    <p>Reach your minimum balance and withdraw on payment days</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="pricing">
+            <h2>Choose Your Plan</h2>
+            <div class="pricing-cards">
+                <div class="pricing-card basic">
+                    <h3>Basic Plan</h3>
+                    <div class="price">₦3,000</div>
+                    <ul class="features">
+                        <li>₦15 per ad view</li>
+                        <li>Up to 50 ads per day</li>
+                        <li>₦5,000 minimum withdrawal</li>
+                        <li>₦500 referral bonus</li>
+                        <li>Payment: 5th & 17th (5AM-8AM)</li>
+                    </ul>
+                    <button class="btn-primary" onclick="selectPlan('basic')">Select Basic</button>
+                </div>
+                <div class="pricing-card premium">
+                    <div class="popular-badge">MOST POPULAR</div>
+                    <h3>Premium Plan</h3>
+                    <div class="price">₦5,000</div>
+                    <ul class="features">
+                        <li>₦20 per ad view</li>
+                        <li>Unlimited ads per day</li>
+                        <li>₦10,000 minimum withdrawal</li>
+                        <li>₦1,000 referral bonus</li>
+                        <li>Payment: 5th & 17th (5AM-12PM)</li>
+                    </ul>
+                    <button class="btn-primary" onclick="selectPlan('premium')">Select Premium</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Login to Your Account</h2>
+            <form id="loginForm">
+                <input type="email" placeholder="Email" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Create Your Account</h2>
+            <form id="registerForm">
+                <input type="text" placeholder="Full Name" required>
+                <input type="email" placeholder="Email" required>
+                <input type="tel" placeholder="Phone Number" required>
+                <input type="password" placeholder="Password" required>
+                <input type="text" placeholder="Referral Code (Optional)">
+                <select id="planSelect" required>
+                    <option value="">Select Plan</option>
+                    <option value="basic">Basic - ₦3,000</option>
+                    <option value="premium">Premium - ₦5,000</option>
+                </select>
+                <input type="text" placeholder="Registration Token" required>
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
