@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://adpay-rho.vercel.app/';
 
 // Mobile Menu Management
 function toggleMobileMenu() {
@@ -171,4 +171,5 @@ function logout() {
 // Initialize auth check when page loads
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
+
 });
