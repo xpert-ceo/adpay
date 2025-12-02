@@ -1,4 +1,4 @@
-const API_BASE = 'https://adpay-rho.vercel.app/';
+const API_BASE = 'https://adpay-rho.vercel.app/api';
 
 // Global variables
 let currentAd = null;
@@ -415,3 +415,4 @@ function logout() {
     window.location.href = '/';
 
 }
+
