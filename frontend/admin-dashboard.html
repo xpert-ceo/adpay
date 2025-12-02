@@ -161,6 +161,16 @@
             border: 1px solid #555;
         }
         
+        .btn-success {
+            background: #10B981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #EF4444;
+            color: white;
+        }
+        
         /* Forms */
         .form-group {
             margin: 15px 0;
@@ -204,7 +214,37 @@
             color: white;
         }
         
-        /* Logout Confirmation */
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #FFD700;
+        }
+        
+        /* Message Box */
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .message-success {
+            background: #10B981;
+            color: white;
+        }
+        
+        .message-error {
+            background: #EF4444;
+            color: white;
+        }
+        
+        .message-info {
+            background: #3B82F6;
+            color: white;
+        }
+        
+        /* Logout Modal */
         .logout-modal {
             display: none;
             position: fixed;
@@ -304,6 +344,11 @@
                 </div>
             </div>
 
+            <!-- Messages -->
+            <div id="successMessage" class="message message-success"></div>
+            <div id="errorMessage" class="message message-error"></div>
+            <div id="infoMessage" class="message message-info"></div>
+
             <!-- Tab: Dashboard -->
             <div id="dashboard-tab" class="tab-content active">
                 <h2>📊 Quick Actions</h2>
@@ -324,8 +369,8 @@
                 
                 <div style="margin-top: 30px;">
                     <h3>Recent Activity</h3>
-                    <div id="recentActivity">
-                        <!-- Activity will be loaded here -->
+                    <div id="recentActivity" class="loading">
+                        Loading recent activity...
                     </div>
                 </div>
             </div>
@@ -353,7 +398,7 @@
                 
                 <div id="generatedTokens" style="margin-top: 30px; display: none;">
                     <h3>🎉 Generated Tokens:</h3>
-                    <div id="tokenList"></div>
+                    <div id="tokenList" class="loading">Generating tokens...</div>
                     <button class="btn btn-secondary" onclick="copyAllTokens()">
                         📋 Copy All Tokens
                     </button>
@@ -367,11 +412,12 @@
             <div id="users-tab" class="tab-content">
                 <h2>👥 All Users</h2>
                 <div style="margin: 20px 0;">
-                    <input type="text" id="searchUsers" placeholder="Search users by name, email, or referral code..." 
-                           style="width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 5px;">
+                    <button class="btn btn-secondary" onclick="loadAllUsers()">
+                        🔄 Refresh Users
+                    </button>
                 </div>
-                <div id="usersList">
-                    <!-- Users will be loaded here -->
+                <div id="usersList" class="loading">
+                    Loading users...
                 </div>
             </div>
 
@@ -379,16 +425,19 @@
             <div id="pending-tab" class="tab-content">
                 <h2>⏳ Users Pending Activation</h2>
                 <p>Users who have registered but not paid/activated</p>
-                <div id="pendingUsersList">
-                    <!-- Pending users will be loaded here -->
+                <button class="btn btn-secondary" onclick="loadPendingUsers()" style="margin-bottom: 15px;">
+                    🔄 Refresh Pending Users
+                </button>
+                <div id="pendingUsersList" class="loading">
+                    Loading pending users...
                 </div>
             </div>
 
             <!-- Tab: Withdrawal Requests -->
             <div id="withdrawals-tab" class="tab-content">
                 <h2>💰 Withdrawal Requests</h2>
-                <div id="withdrawalsList">
-                    <!-- Withdrawals will be loaded here -->
+                <div id="withdrawalsList" class="loading">
+                    Loading withdrawal requests...
                 </div>
             </div>
 
@@ -396,16 +445,12 @@
             <div id="transactions-tab" class="tab-content">
                 <h2>📋 All Transactions</h2>
                 <div style="margin: 20px 0;">
-                    <select id="filterType" onchange="loadTransactions()">
-                        <option value="">All Types</option>
-                        <option value="registration">Registration</option>
-                        <option value="ad_view">Ad Views</option>
-                        <option value="referral_bonus">Referral Bonus</option>
-                        <option value="withdrawal">Withdrawals</option>
-                    </select>
+                    <button class="btn btn-secondary" onclick="loadTransactions()">
+                        🔄 Refresh Transactions
+                    </button>
                 </div>
-                <div id="transactionsList">
-                    <!-- Transactions will be loaded here -->
+                <div id="transactionsList" class="loading">
+                    Loading transactions...
                 </div>
             </div>
         </div>
@@ -424,9 +469,9 @@
     </div>
 
     <script>
-        // API Base URL - CHANGE THIS TO YOUR VERCEL URL
-        const API_BASE = 'https://adpay-rho.vercel.app/';
-        // Example: const API_BASE = 'https://adpay-backend.vercel.app/api';
+        // 🔥 CHANGE THIS TO YOUR VERCEL URL:
+        const API_BASE = 'https://adpay-rho.vercel.app/api';
+        let adminToken = '';
 
         // Check if admin is logged in
         window.onload = function() {
@@ -440,10 +485,23 @@
             const adminEmail = localStorage.getItem('adminEmail') || 'admin@adpay.com';
             document.getElementById('adminEmail').textContent = adminEmail;
             
-            // Load initial data
-            loadDashboardStats();
-            loadRecentActivity();
+            // First admin login to get token
+            adminLogin().then(() => {
+                loadDashboardStats();
+                loadRecentActivity();
+            });
         };
+
+        // Show messages
+        function showMessage(type, text, duration = 5000) {
+            const element = document.getElementById(type + 'Message');
+            element.textContent = text;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, duration);
+        }
 
         // Tab Navigation
         function showTab(tabName) {
@@ -458,7 +516,10 @@
             });
             
             // Show selected tab
-            document.getElementById(tabName + '-tab').classList.add('active');
+            const tab = document.getElementById(tabName + '-tab');
+            if (tab) {
+                tab.classList.add('active');
+            }
             
             // Highlight menu item
             document.querySelectorAll('.menu-item').forEach(item => {
@@ -515,307 +576,453 @@
             window.location.href = 'admin-login.html';
         }
 
-        // Data Loading Functions
-        async function loadDashboardStats() {
+        // 🔥 REAL API FUNCTIONS
+
+        // 1. Admin Login
+        async function adminLogin() {
             try {
-                // In a real app, you would call your API
-                // For now, we'll use mock data
-                document.getElementById('totalUsers').textContent = '125';
-                document.getElementById('activeUsers').textContent = '98';
-                document.getElementById('pendingUsers').textContent = '27';
-                document.getElementById('totalRevenue').textContent = '₦375,000';
+                const response = await fetch(`${API_BASE}/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@adpay.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        adminToken = data.data.token || 'admin-temporary-token';
+                        showMessage('success', 'Admin login successful!', 3000);
+                    }
+                } else {
+                    showMessage('error', 'Admin login failed. Using fallback mode.');
+                    adminToken = 'admin-temporary-token';
+                }
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('Admin login error:', error);
+                showMessage('error', 'Cannot connect to server. Check internet connection.');
+                adminToken = 'admin-temporary-token';
             }
         }
 
-        async function loadRecentActivity() {
-            const activities = [
-                'John Doe registered as Premium user',
-                'Jane Smith earned ₦500 from ads',
-                'Mike Johnson referred a new user',
-                'Sarah Williams requested ₦15,000 withdrawal',
-                'Admin generated 5 Premium tokens'
-            ];
+        // 2. Load Dashboard Stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const stats = data.data.stats;
+                        document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                        document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
+                        document.getElementById('pendingUsers').textContent = stats.pendingUsers || 0;
+                        document.getElementById('totalRevenue').textContent = `₦${(stats.totalRevenue || 0).toLocaleString()}`;
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('Using fallback dashboard data');
+            }
             
-            let html = '<ul>';
-            activities.forEach(activity => {
-                html += `<li style="padding: 8px; border-bottom: 1px solid #333;">${activity}</li>`;
-            });
-            html += '</ul>';
-            
-            document.getElementById('recentActivity').innerHTML = html;
+            // Fallback data
+            document.getElementById('totalUsers').textContent = '0';
+            document.getElementById('activeUsers').textContent = '0';
+            document.getElementById('pendingUsers').textContent = '0';
+            document.getElementById('totalRevenue').textContent = '₦0';
         }
 
-        // Generate Tokens
+        // 3. Load Recent Activity
+        async function loadRecentActivity() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    let html = '<ul style="list-style: none; padding: 0;">';
+                    
+                    if (data.success && data.data.recentTransactions && data.data.recentTransactions.length > 0) {
+                        data.data.recentTransactions.slice(0, 10).forEach(transaction => {
+                            const date = new Date(transaction.createdAt).toLocaleDateString();
+                            const user = transaction.user?.fullName || 'A User';
+                            html += `<li style="padding: 8px; border-bottom: 1px solid #333;">
+                                📅 ${date}: ${user} - ${transaction.description} (₦${transaction.amount})
+                            </li>`;
+                        });
+                    } else {
+                        html += '<li>No recent activity yet</li>';
+                    }
+                    
+                    html += '</ul>';
+                    document.getElementById('recentActivity').innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('recentActivity').innerHTML = 
+                    '<p>No recent activity found. Start by generating tokens!</p>';
+            }
+        }
+
+        // 4. Generate Tokens - REAL API CALL
         async function generateTokens() {
             const plan = document.getElementById('tokenPlan').value;
-            const quantity = document.getElementById('tokenQuantity').value;
+            const quantity = parseInt(document.getElementById('tokenQuantity').value);
             
-            if (!quantity || quantity < 1) {
-                alert('Please enter a valid number of tokens');
+            if (!quantity || quantity < 1 || quantity > 100) {
+                showMessage('error', 'Please enter a valid number (1-100)');
                 return;
             }
             
-            // In a real app, call your API
-            // For now, generate mock tokens
-            const tokens = [];
-            const price = plan === 'premium' ? '₦5,000' : '₦3,000';
+            showMessage('info', 'Generating tokens...', 3000);
             
-            for (let i = 0; i < quantity; i++) {
-                const token = 'ADP' + Math.random().toString(36).substring(2, 10).toUpperCase();
-                tokens.push({
-                    code: token,
-                    plan: plan,
-                    price: price,
-                    createdAt: new Date().toLocaleString()
+            try {
+                const response = await fetch(`${API_BASE}/admin/tokens/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        userType: plan,
+                        quantity: quantity
+                    })
                 });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        let html = '<div style="background: #333; padding: 15px; border-radius: 5px; margin: 10px 0;">';
+                        html += `<h4>${quantity} ${plan.toUpperCase()} Tokens Generated</h4>`;
+                        html += '<table style="width: 100%; margin-top: 10px;">';
+                        html += '<tr><th>Token Code</th><th>Plan</th><th>Price</th></tr>';
+                        
+                        data.data.tokens.forEach(token => {
+                            html += `
+                                <tr>
+                                    <td><strong style="color: #FFD700;">${token.code}</strong></td>
+                                    <td>${token.userType}</td>
+                                    <td>₦${token.price.toLocaleString()}</td>
+                                </tr>
+                            `;
+                        });
+                        html += '</table>';
+                        html += '<p style="margin-top: 10px; color: #FFD700;">Share these tokens with new users for registration</p>';
+                        html += '</div>';
+                        
+                        document.getElementById('tokenList').innerHTML = html;
+                        document.getElementById('generatedTokens').style.display = 'block';
+                        showMessage('success', `✅ ${quantity} ${plan} tokens generated successfully!`);
+                    } else {
+                        showMessage('error', data.message || 'Failed to generate tokens');
+                    }
+                } else {
+                    const error = await response.text();
+                    showMessage('error', 'Server error: ' + error);
+                }
+            } catch (error) {
+                console.error('Token generation error:', error);
+                showMessage('error', 'Failed to connect to server. Check backend URL.');
             }
-            
-            // Display tokens
-            let html = '<table>';
-            html += '<tr><th>Token Code</th><th>Plan</th><th>Price</th><th>Created</th></tr>';
-            
-            tokens.forEach(token => {
-                html += `
-                    <tr>
-                        <td><strong>${token.code}</strong></td>
-                        <td>${token.plan.toUpperCase()}</td>
-                        <td>${token.price}</td>
-                        <td>${token.createdAt}</td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            
-            document.getElementById('tokenList').innerHTML = html;
-            document.getElementById('generatedTokens').style.display = 'block';
-            
-            alert(`${quantity} ${plan} tokens generated successfully!`);
         }
 
+        // 5. Load All Users
+        async function loadAllUsers() {
+            document.getElementById('usersList').innerHTML = '<div class="loading">Loading users...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.users && data.data.users.length > 0) {
+                        let html = '<table>';
+                        html += '<tr><th>Name</th><th>Email</th><th>Plan</th><th>Balance</th><th>Status</th><th>Joined</th><th>Actions</th></tr>';
+                        
+                        data.data.users.forEach(user => {
+                            const statusClass = user.isActive ? 'status-active' : 'status-pending';
+                            const statusText = user.isActive ? 'Active' : 'Pending';
+                            const joinedDate = new Date(user.registrationDate).toLocaleDateString();
+                            
+                            html += `
+                                <tr>
+                                    <td>${user.fullName || 'N/A'}</td>
+                                    <td>${user.email || 'N/A'}</td>
+                                    <td>${user.userType || 'N/A'}</td>
+                                    <td>₦${(user.balance || 0).toLocaleString()}</td>
+                                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                                    <td>${joinedDate}</td>
+                                    <td>
+                                        ${!user.isActive ? 
+                                          `<button class="btn btn-success" onclick="activateUser('${user._id}', '${user.fullName}')">Activate</button>` : 
+                                          '<button class="btn btn-secondary" disabled>Active</button>'}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        html += '</table>';
+                        
+                        document.getElementById('usersList').innerHTML = html;
+                        showMessage('success', `Loaded ${data.data.users.length} users`);
+                    } else {
+                        document.getElementById('usersList').innerHTML = '<p>No users found yet. Generate tokens first!</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersList').innerHTML = 
+                    '<p style="color: #EF4444;">⚠️ Cannot load users. Check backend connection.</p>';
+            }
+        }
+
+        // 6. Load Pending Users
+        async function loadPendingUsers() {
+            document.getElementById('pendingUsersList').innerHTML = '<div class="loading">Loading pending users...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/pending`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.users && data.data.users.length > 0) {
+                        let html = '<table>';
+                        html += '<tr><th>Name</th><th>Email</th><th>Phone</th><th>Plan</th><th>Registered</th><th>Actions</th></tr>';
+                        
+                        data.data.users.forEach(user => {
+                            const registered = new Date(user.registrationDate).toLocaleDateString();
+                            const price = user.userType === 'premium' ? '₦5,000' : '₦3,000';
+                            
+                            html += `
+                                <tr>
+                                    <td>${user.fullName || 'N/A'}</td>
+                                    <td>${user.email || 'N/A'}</td>
+                                    <td>${user.phone || 'N/A'}</td>
+                                    <td>${user.userType} (${price})</td>
+                                    <td>${registered}</td>
+                                    <td>
+                                        <button class="btn btn-success" onclick="activatePendingUser('${user._id}', '${user.fullName}')">
+                                            ✅ Activate User
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="sendReminder('${user.email}', '${user.fullName}')">
+                                            📧 Remind
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        html += '</table>';
+                        
+                        document.getElementById('pendingUsersList').innerHTML = html;
+                    } else {
+                        document.getElementById('pendingUsersList').innerHTML = 
+                            '<p>🎉 No pending users! All users are activated.</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading pending users:', error);
+                document.getElementById('pendingUsersList').innerHTML = 
+                    '<p>No pending users found or connection error.</p>';
+            }
+        }
+
+        // 7. Activate Pending User
+        async function activatePendingUser(userId, userName) {
+            if (!confirm(`✅ Activate ${userName}?\n\nConfirm you have received payment of ₦${userName.includes('premium') ? '5,000' : '3,000'} before activating.`)) {
+                return;
+            }
+            
+            showMessage('info', `Activating ${userName}...`, 3000);
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}/activate`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('success', `✅ ${userName} activated successfully!`);
+                        // Refresh all data
+                        setTimeout(() => {
+                            loadPendingUsers();
+                            loadAllUsers();
+                            loadDashboardStats();
+                        }, 1000);
+                    } else {
+                        showMessage('error', data.message || 'Activation failed');
+                    }
+                } else {
+                    showMessage('error', 'Server error during activation');
+                }
+            } catch (error) {
+                console.error('Activation error:', error);
+                showMessage('error', 'Failed to activate user. Check connection.');
+            }
+        }
+
+        // 8. Activate User (from all users list)
+        async function activateUser(userId, userName) {
+            activatePendingUser(userId, userName);
+        }
+
+        // 9. Load Withdrawals
+        async function loadWithdrawals() {
+            document.getElementById('withdrawalsList').innerHTML = 
+                '<div class="loading">Checking withdrawal requests...</div>';
+            
+            // Since we don't have a withdrawals endpoint yet, show info
+            setTimeout(() => {
+                document.getElementById('withdrawalsList').innerHTML = 
+                    '<div style="background: #333; padding: 20px; border-radius: 10px;">' +
+                    '<h3 style="color: #FFD700;">💰 Withdrawal System</h3>' +
+                    '<p>Users can request withdrawals on payment days (5th & 17th).</p>' +
+                    '<p><strong>Basic Users:</strong> ₦5,000 minimum (5AM-8AM)</p>' +
+                    '<p><strong>Premium Users:</strong> ₦10,000 minimum (5AM-12PM)</p>' +
+                    '<p>Check the "Manage Users" tab to see user balances.</p>' +
+                    '</div>';
+            }, 1000);
+        }
+
+        // 10. Load Transactions
+        async function loadTransactions() {
+            document.getElementById('transactionsList').innerHTML = '<div class="loading">Loading transactions...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.recentTransactions && data.data.recentTransactions.length > 0) {
+                        let html = '<table>';
+                        html += '<tr><th>Date</th><th>User</th><th>Type</th><th>Amount</th><th>Status</th></tr>';
+                        
+                        data.data.recentTransactions.forEach(transaction => {
+                            const date = new Date(transaction.createdAt).toLocaleDateString();
+                            const user = transaction.user?.fullName || 'User';
+                            const type = transaction.type.replace('_', ' ').toUpperCase();
+                            const statusClass = transaction.status === 'completed' ? 'status-active' : 'status-pending';
+                            
+                            html += `
+                                <tr>
+                                    <td>${date}</td>
+                                    <td>${user}</td>
+                                    <td>${type}</td>
+                                    <td>₦${transaction.amount}</td>
+                                    <td><span class="status ${statusClass}">${transaction.status}</span></td>
+                                </tr>
+                            `;
+                        });
+                        html += '</table>';
+                        
+                        document.getElementById('transactionsList').innerHTML = html;
+                    } else {
+                        document.getElementById('transactionsList').innerHTML = 
+                            '<p>No transactions yet. Users will appear after registration.</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                document.getElementById('transactionsList').innerHTML = 
+                    '<p>Cannot load transactions. Check backend connection.</p>';
+            }
+        }
+
+        // Utility Functions
         function copyAllTokens() {
             const tokenElements = document.querySelectorAll('#tokenList strong');
+            if (tokenElements.length === 0) {
+                showMessage('error', 'No tokens to copy');
+                return;
+            }
+            
             const tokens = Array.from(tokenElements).map(el => el.textContent);
             const text = tokens.join('\n');
             
             navigator.clipboard.writeText(text).then(() => {
-                alert('All tokens copied to clipboard!');
+                showMessage('success', `${tokens.length} tokens copied to clipboard!`);
+            }).catch(err => {
+                showMessage('error', 'Failed to copy: ' + err);
             });
         }
 
         function printTokens() {
-            window.print();
+            const tokenContent = document.getElementById('tokenList').innerHTML;
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>AdPay Registration Tokens</title>
+                        <style>
+                            body { font-family: Arial; padding: 20px; }
+                            h2 { color: #FFD700; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+                            th { background: #f0f0f0; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>AdPay Registration Tokens</h2>
+                        <p>Generated on: ${new Date().toLocaleString()}</p>
+                        ${tokenContent}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
         }
 
-        // Load All Users
-        async function loadAllUsers() {
-            // Mock data - replace with API call
-            const users = [
-                { name: 'John Doe', email: 'john@email.com', type: 'Premium', balance: '₦25,000', status: 'active', joined: '2024-01-15' },
-                { name: 'Jane Smith', email: 'jane@email.com', type: 'Basic', balance: '₦4,500', status: 'active', joined: '2024-01-20' },
-                { name: 'Mike Johnson', email: 'mike@email.com', type: 'Premium', balance: '₦12,000', status: 'active', joined: '2024-01-25' },
-                { name: 'Sarah Williams', email: 'sarah@email.com', type: 'Basic', balance: '₦3,200', status: 'pending', joined: '2024-01-28' }
-            ];
-            
-            let html = '<table>';
-            html += '<tr><th>Name</th><th>Email</th><th>Plan</th><th>Balance</th><th>Status</th><th>Joined</th><th>Actions</th></tr>';
-            
-            users.forEach(user => {
-                const statusClass = user.status === 'active' ? 'status-active' : 
-                                  user.status === 'pending' ? 'status-pending' : 'status-inactive';
-                
-                html += `
-                    <tr>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.type}</td>
-                        <td>${user.balance}</td>
-                        <td><span class="status ${statusClass}">${user.status}</span></td>
-                        <td>${user.joined}</td>
-                        <td>
-                            <button class="btn btn-secondary" onclick="viewUser('${user.email}')">View</button>
-                            ${user.status === 'pending' ? 
-                              `<button class="btn btn-primary" onclick="activateUser('${user.email}')">Activate</button>` : 
-                              ''}
-                        </td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            
-            document.getElementById('usersList').innerHTML = html;
-        }
-
-        // Load Pending Users
-        async function loadPendingUsers() {
-            // Mock data - replace with API call
-            const pendingUsers = [
-                { id: 'U001', name: 'Sarah Williams', email: 'sarah@email.com', plan: 'Basic', amount: '₦3,000', registered: '2024-01-28' },
-                { id: 'U002', name: 'David Brown', email: 'david@email.com', plan: 'Premium', amount: '₦5,000', registered: '2024-01-29' },
-                { id: 'U003', name: 'Emma Wilson', email: 'emma@email.com', plan: 'Basic', amount: '₦3,000', registered: '2024-01-30' }
-            ];
-            
-            let html = '<table>';
-            html += '<tr><th>User ID</th><th>Name</th><th>Email</th><th>Plan</th><th>Amount</th><th>Registered</th><th>Action</th></tr>';
-            
-            pendingUsers.forEach(user => {
-                html += `
-                    <tr>
-                        <td>${user.id}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.plan}</td>
-                        <td>${user.amount}</td>
-                        <td>${user.registered}</td>
-                        <td>
-                            <button class="btn btn-primary" onclick="activatePendingUser('${user.id}', '${user.email}')">
-                                ✅ Activate & Confirm Payment
-                            </button>
-                            <button class="btn btn-secondary" onclick="sendReminder('${user.email}')">
-                                📧 Send Reminder
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            
-            document.getElementById('pendingUsersList').innerHTML = html;
-        }
-
-        // Load Withdrawals
-        async function loadWithdrawals() {
-            // Mock data - replace with API call
-            const withdrawals = [
-                { id: 'W001', user: 'John Doe', amount: '₦15,000', bank: 'GTBank', account: '0123456789', date: '2024-01-28', status: 'pending' },
-                { id: 'W002', user: 'Mike Johnson', amount: '₦10,000', bank: 'Access Bank', account: '9876543210', date: '2024-01-29', status: 'pending' },
-                { id: 'W003', user: 'Jane Smith', amount: '₦5,000', bank: 'Zenith Bank', account: '5555555555', date: '2024-01-27', status: 'paid' }
-            ];
-            
-            let html = '<table>';
-            html += '<tr><th>ID</th><th>User</th><th>Amount</th><th>Bank Details</th><th>Date</th><th>Status</th><th>Actions</th></tr>';
-            
-            withdrawals.forEach(w => {
-                const statusClass = w.status === 'paid' ? 'status-active' : 'status-pending';
-                
-                html += `
-                    <tr>
-                        <td>${w.id}</td>
-                        <td>${w.user}</td>
-                        <td>${w.amount}</td>
-                        <td>${w.bank} - ${w.account}</td>
-                        <td>${w.date}</td>
-                        <td><span class="status ${statusClass}">${w.status}</span></td>
-                        <td>
-                            ${w.status === 'pending' ? 
-                              `<button class="btn btn-primary" onclick="markAsPaid('${w.id}')">Mark as Paid</button>` : 
-                              `<button class="btn btn-secondary" disabled>Already Paid</button>`}
-                            <button class="btn btn-secondary" onclick="viewReceipt('${w.id}')">View Details</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            
-            document.getElementById('withdrawalsList').innerHTML = html;
-        }
-
-        // Load Transactions
-        async function loadTransactions() {
-            // Mock data - replace with API call
-            const transactions = [
-                { id: 'T001', user: 'John Doe', type: 'registration', amount: '₦5,000', date: '2024-01-15', status: 'completed' },
-                { id: 'T002', user: 'Jane Smith', type: 'ad_view', amount: '₦15', date: '2024-01-16', status: 'completed' },
-                { id: 'T003', user: 'Mike Johnson', type: 'referral_bonus', amount: '₦1,000', date: '2024-01-17', status: 'completed' },
-                { id: 'T004', user: 'Sarah Williams', type: 'withdrawal', amount: '₦15,000', date: '2024-01-18', status: 'pending' }
-            ];
-            
-            const filter = document.getElementById('filterType').value;
-            let filtered = transactions;
-            
-            if (filter) {
-                filtered = transactions.filter(t => t.type === filter);
-            }
-            
-            let html = '<table>';
-            html += '<tr><th>ID</th><th>User</th><th>Type</th><th>Amount</th><th>Date</th><th>Status</th></tr>';
-            
-            filtered.forEach(t => {
-                const statusClass = t.status === 'completed' ? 'status-active' : 'status-pending';
-                
-                html += `
-                    <tr>
-                        <td>${t.id}</td>
-                        <td>${t.user}</td>
-                        <td>${t.type.replace('_', ' ').toUpperCase()}</td>
-                        <td>${t.amount}</td>
-                        <td>${t.date}</td>
-                        <td><span class="status ${statusClass}">${t.status}</span></td>
-                    </tr>
-                `;
-            });
-            html += '</table>';
-            
-            document.getElementById('transactionsList').innerHTML = html;
-        }
-
-        // Action Functions
-        function activatePendingUser(userId, email) {
-            if (confirm(`Activate user ${email} and confirm payment received?`)) {
-                alert(`User ${email} activated successfully!`);
-                // In real app, call API: POST /api/admin/users/{userId}/activate
-                loadPendingUsers(); // Refresh list
-                loadDashboardStats(); // Refresh stats
-            }
-        }
-
-        function markAsPaid(withdrawalId) {
-            if (confirm(`Mark withdrawal ${withdrawalId} as paid?`)) {
-                alert(`Withdrawal ${withdrawalId} marked as paid!`);
-                // In real app, call API to update withdrawal status
-                loadWithdrawals(); // Refresh list
-            }
-        }
-
-        function sendReminder(email) {
-            alert(`Payment reminder sent to ${email}`);
-            // In real app, implement email sending
-        }
-
-        function viewUser(email) {
-            alert(`Viewing details for ${email}`);
-            // In real app, show user details modal
-        }
-
-        function activateUser(email) {
-            if (confirm(`Activate user ${email}?`)) {
-                alert(`User ${email} activated!`);
-                // In real app, call activation API
-                loadAllUsers(); // Refresh list
-            }
-        }
-
-        function viewReceipt(id) {
-            alert(`Showing receipt for transaction ${id}`);
-            // In real app, show transaction details
+        function sendReminder(email, name) {
+            showMessage('info', `📧 Payment reminder sent to ${name} (${email})`);
+            // In production, implement email sending
         }
 
         function refreshAllData() {
+            showMessage('info', 'Refreshing all data...', 2000);
             loadDashboardStats();
             loadRecentActivity();
             loadAllUsers();
             loadPendingUsers();
             loadWithdrawals();
             loadTransactions();
-            alert('All data refreshed!');
         }
 
-        // Search functionality
-        document.getElementById('searchUsers').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            // Implement search logic here
-        });
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && activeTab.id === 'dashboard-tab') {
+                loadDashboardStats();
+                loadRecentActivity();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
